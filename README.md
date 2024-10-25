@@ -1,16 +1,14 @@
-# Подготовка виртуальной машины
+# Проект. Создание рекомендательной системы. Часть 2
 
 ## Склонируйте репозиторий
 
 Склонируйте репозиторий проекта:
 
 ```
-git clone https://github.com/yandex-praktikum/mle-project-sprint-4-v001.git
+git clone https://github.com/GeorgeBuslaev/mle-recsys-start.git
 ```
 
 ## Активируйте виртуальное окружение
-
-Используйте то же самое виртуальное окружение, что и созданное для работы с уроками. Если его не существует, то его следует создать.
 
 Создать новое виртуальное окружение можно командой:
 
@@ -21,7 +19,7 @@ python3 -m venv env_recsys_start
 После его инициализации следующей командой
 
 ```
-. env_recsys_start/bin/activate
+source env_recsys_start/bin/activate
 ```
 
 установите в него необходимые Python-пакеты следующей командой
@@ -29,44 +27,69 @@ python3 -m venv env_recsys_start
 ```
 pip install -r requirements.txt
 ```
+# Расчёт рекомендаций
 
-### Скачайте файлы с данными
-
-Для начала работы понадобится три файла с данными:
-- [tracks.parquet](https://storage.yandexcloud.net/mle-data/ym/tracks.parquet)
-- [catalog_names.parquet](https://storage.yandexcloud.net/mle-data/ym/catalog_names.parquet)
-- [interactions.parquet](https://storage.yandexcloud.net/mle-data/ym/interactions.parquet)
- 
-Скачайте их в директорию локального репозитория. Для удобства вы можете воспользоваться командой wget:
-
-```
-wget https://storage.yandexcloud.net/mle-data/ym/tracks.parquet
-
-wget https://storage.yandexcloud.net/mle-data/ym/catalog_names.parquet
-
-wget https://storage.yandexcloud.net/mle-data/ym/interactions.parquet
-```
-
-## Запустите Jupyter Lab
-
-Запустите Jupyter Lab в командной строке
+Код по первой части проекта находится в файле `./notebook/recommendations.ipynb`. Используйте его для выполнения первой части проекта. Для этого запустите Jupyter Lab в командной строке
 
 ```
 jupyter lab --ip=0.0.0.0 --no-browser
 ```
 
-# Расчёт рекомендаций
+### Скачайте файлы с данными
 
-Код для выполнения первой части проекта находится в файле `recommendations.ipynb`. Изначально, это шаблон. Используйте его для выполнения первой части проекта.
+Для начала работы с сервисом на втором этапе понадобится перейти в папку для хранения данных и скачать файлы из S3:
+
+```
+cd services/data/
+python Storage_download.py
+```
 
 # Сервис рекомендаций
 
-Код сервиса рекомендаций находится в файле `recommendations_service.py`.
+Код сервиса рекомендаций находится в файле по адресу `service/app/recommendations_service.py`.
 
-<*укажите здесь необходимые шаги для запуска сервиса рекомендаций*>
+Для запуска сервиса необходимо выполнить код:
+
+```
+source env_recsys_start/bin/activate
+cd services/app/
+uvicorn recommendation_service:app --port 8000 
+
+```
 
 # Инструкции для тестирования сервиса
 
-Код для тестирования сервиса находится в файле `test_service.py`.
+Код для тестирования сервиса находится в файле по адресу `service/test/test_service.py`.
 
-<*укажите здесь необходимые шаги для тестирования сервиса рекомендаций*>
+Для запуска теста необходимо в новом терминале выполнить код:
+
+```
+source env_recsys_start/bin/activate
+cd services/app/
+python test_service.py > test_service.log
+```
+
+С результатами работы сервиса можно ознакомится в файле `test_service.log`. Пример вывода приведен ниже:
+
+```
+***********************************************
+Cold user 1234567890 recommendation:
+requests code: {'user_id': 1234567890, 'k': 10}
+recommendation: [53404, 33311009, 178529, 35505245, 65851540, 24692821, 32947997, 51241318, 795836, 45499814]
+***********************************************
+Cold user with item 59206785 recommendation:
+requests code: {'item_id': 59206785}
+recommendation: [47273871, 1020042, 56822013]
+***********************************************
+User 1374571 personal recommendation:
+requests code: {'user_id': 1374571, 'k': 10}
+recommendation: [70420086, 52913653, 63838646, 81205684, 71863173, 64376614, 83688975, 86468609, 52645814, 37151]
+***********************************************
+User 1374571 with online activity personal recommendation:
+requests code: {'user_id': 1374571, 'k': 10}
+Blended recommendation: [70420086, 17368498, 52913653, 71129020, 63838646, 47273871, 81205684, 1020042, 71863173, 53447442]
+```
+ 
+ В строчке `Blended recommendation` представлены смешанные онлайн- и офлайн-рекомендации. Смешение происходило поочередно, затем добавлялся хвост наиболее длинной последовательности рекомендаций, после смешения отбирались `k` значений.
+
+ **Таким образом, на основании тестирования продемонстрировано, что созданный сервис работоспособен и может быть использован в рекомендательных системах.**
