@@ -21,24 +21,14 @@ def get_session():
     )
 
 if __name__ == '__main__':
-    bucket_name = 's3-student-mle-20240325-d5eb3b4dad' 
+    bucket_name = 's3-student-mle-20240325-d5eb3b4dad'
     s3 = get_session()
-    file_name = 'top_popular.parquet'
-    file_name2 = 'top_recs.parquet'
+    file_names = ['top_popular.parquet', 'similar.parquet', 'recommendations_u.parquet']
     file_name_s3_path = 'recsys/recommendations/'
-    s3.download_file(Bucket=bucket_name, Key=file_name_s3_path+file_name, Filename=file_name2)
-    print(f'{file_name} успешно выгружен из {bucket_name} под именем {file_name2}.')
-    print(' ')
 
-    file_name = 'similar.parquet'
-    file_name2 = 'similar.parquet'
-    file_name_s3_path = 'recsys/recommendations/'
-    s3.download_file(Bucket=bucket_name, Key=file_name_s3_path+file_name, Filename=file_name2)
-    print(f'{file_name} успешно выгружен из {bucket_name} под именем {file_name2}.')
-    print(' ')
+    for file_name in file_names:
+        s3.download_file(Bucket=bucket_name, Key=file_name_s3_path + file_name, Filename=file_name)
+        print(f'{file_name} успешно выгружен из {bucket_name} под именем {file_name}.')
+        print(' ')
 
-    file_name = 'recommendations_u.parquet'
-    file_name2 = 'recommendations_u.parquet'
-    file_name_s3_path = 'recsys/recommendations/'
-    s3.download_file(Bucket=bucket_name, Key=file_name_s3_path+file_name, Filename=file_name2)
-    print(f'{file_name} успешно выгружен из {bucket_name} под именем {file_name2}.')
+    print('Все файлы успешно выгружены.')
