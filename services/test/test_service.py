@@ -15,7 +15,7 @@ if resp.status_code == 200:
 else:
     recs = []
     print(f"status code: {resp.status_code}")
-print(f"recommendation: {recs['recs']}")
+print(f"recommendation: {recs}")
 
 #Рекомендации для холодныйх пользователей, по последнему выбранному товару
 params = {"item_id": 59206785}
@@ -41,7 +41,7 @@ if resp.status_code == 200:
 else:
     recs = []
     print(f"status code: {resp.status_code}")
-print(f"recommendation: {recs['recs']}")
+print(f"recommendation: {recs}")
 
 #Рекомендации для пользователя с персональными рекомендациями и онлайн-историей
 #Передаем данные о последней активности пользователя - формируем онлайн-историю
@@ -65,7 +65,7 @@ else:
     recs = []
     print(f"status code: {resp.status_code}")
     
-print(f"Blended recommendation: {recs['recs']}")
+print(f"Blended recommendation: {recs}")
 
 
 

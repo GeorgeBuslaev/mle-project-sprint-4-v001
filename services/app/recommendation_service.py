@@ -43,7 +43,6 @@ class Recommendations:
         except:
             logger.error("No recommendations found")
             recs = []
-
         return recs
 
     def stats(self):
@@ -118,28 +117,40 @@ def dedup_ids(ids):
 async def lifespan(app: FastAPI):
     # код ниже (до yield) выполнится только один раз при запуске сервиса
     logger.info("Starting")
-   
+
+    # предзагрузим рекомендации
+    rec_store.load(
+        "personal",
+        '../data/recommendations_u.parquet',
+        columns=["user_id", "item_id", "rank"]
+        )
+        
+    # предзагрузим свмые популярные треки
+    rec_store.load(
+        "default",
+        '../data/top_recs.parquet',
+        columns=["item_id", "rank"]
+        )
+    
+    # предзагрузим данные о похожих треках
+    sim_items_store.load(
+        "../data/similar.parquet",
+        columns=["item_id_1", "item_id_2", "score"]
+        )
+       
     yield
     # этот код выполнится только один раз при остановке сервиса
     rec_store.stats()
     logger.info("Stopping")
-    
-# создаём приложение FastAPI
-app = FastAPI(title="recommendations", lifespan=lifespan)
 
 events_store = EventStore()
 
+rec_store = Recommendations()
+
 sim_items_store = SimilarItems()
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-
-    logger.info("Ready!")
-    # код ниже выполнится только один раз при остановке сервиса
-    yield
-
 # создаём приложение FastAPI
-app = FastAPI(title="events")
+app = FastAPI(title="recommendations", lifespan=lifespan)
 
 @app.post("/put")
 async def put(user_id: int, item_id: int):
@@ -161,25 +172,11 @@ async def get(user_id: int, k: int = 10):
 
     return {"events": events}
 
-
-
 @app.post("/recommendations_offline/")
 async def recommendations_offline(user_id: int, k: int = 100):
     """
     Возвращает список рекомендаций длиной k для пользователя user_id
     """
-    rec_store = Recommendations()
-
-    rec_store.load(
-        "personal",
-        '../data/recommendations_u.parquet',
-        columns=["user_id", "item_id", "rank"],
-    )
-    rec_store.load(
-        "default",
-        '../data/top_recs.parquet',
-        columns=["item_id", "rank"],
-    )
     recs = rec_store.get(user_id=user_id, k=k)
 
     return {"recs": recs}
@@ -189,14 +186,9 @@ async def recommendations(item_id: int, k: int = 10):
     """
     Возвращает список похожих объектов длиной k для item_id
     """
-    sim_items_store.load("../data/similar.parquet",
-        columns=["item_id_1", "item_id_2", "score"],
-    )
-
     i2i = sim_items_store.get(item_id, k)
 
     return i2i
-
 
 @app.post("/recommendations_online")
 async def recommendations_online(user_id: int, k: int = 100):
@@ -228,7 +220,6 @@ async def recommendations_online(user_id: int, k: int = 100):
     recs = dedup_ids(combined)
     return {"recs": recs} 
 
-
 @app.post("/recommendations")
 async def recommendations(user_id: int, k: int = 100):
     """
@@ -249,9 +240,9 @@ async def recommendations(user_id: int, k: int = 100):
         recs_blended.append(recs_online[i])
     # добавляем оставшиеся элементы в конец
     if len(recs_offline) > min_length:
-        recs_blended.extend(recs_offline[min_length:i])
+        recs_blended.extend(recs_offline[min_length:])
     elif len(recs_online) > min_length:
-        recs_blended.extend(recs_online[min_length:i])
+        recs_blended.extend(recs_online[min_length:])
 
     # удаляем дубликаты
     recs_blended = dedup_ids(recs_blended)
